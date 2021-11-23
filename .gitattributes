@@ -1,0 +1,34 @@
+*.h linguist-language=C
+
+# Configuration files
+*.ini text
+*.cfg text
+
+# C/C++ sources
+*.c     text diff=c
+*.h     text diff=c
+*.cc    text diff=cpp
+*.cxx   text diff=cpp
+*.cpp   text diff=cpp
+*.hpp   text diff=cpp
+*.hh    text diff=cpp
+
+# Lua
+*.lua   text diff=lua
+
+# Documents
+*.md    text diff=markdown
+*.txt   text
+*.rst   text
+*.pdf   binary
+*.css   text diff=css
+*.html  text diff=html
+
+# Graphics
+*.png   binary
+*.ico   binary
+*.dia   binary
+*.gif   binary
+*.odg   binary
+*.fig   text
+*.svg   text
