@@ -4,7 +4,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/oAGoulart/srlua-vc?color=green)
 [![License](https://img.shields.io/badge/license-MIT-informational.svg)](https://opensource.org/licenses/MIT)
 
-Modified version of **[srlua]** for **MSVC** (v145) using version 5.4 of Lua.
+Modified version of **[srlua]** for **MSVC** (v145) using version 5.5 of Lua.
 
 Quote from the original README:
 

@@ -16,6 +16,7 @@
 
 #include "lauxlib.h"
 #include "lualib.h"
+#include "llimits.h"
 
 
 static lua_State *getco (lua_State *L) {
@@ -76,9 +77,9 @@ static int luaB_auxwrap (lua_State *L) {
   if (l_unlikely(r < 0)) {  /* error? */
     int stat = lua_status(co);
     if (stat != LUA_OK && stat != LUA_YIELD) {  /* error in the coroutine? */
-      stat = lua_resetthread(co);  /* close its tbc variables */
+      stat = lua_closethread(co, L);  /* close its tbc variables */
       lua_assert(stat != LUA_OK);
-      lua_xmove(co, L, 1);  /* copy error message */
+      lua_xmove(co, L, 1);  /* move error message to the caller */
     }
     if (stat != LUA_ERRMEM &&  /* not a memory error and ... */
         lua_type(L, -1) == LUA_TSTRING) {  /* ... error object is a string? */
@@ -153,8 +154,13 @@ static int luaB_costatus (lua_State *L) {
 }
 
 
+static lua_State *getoptco (lua_State *L) {
+  return (lua_isnone(L, 1) ? L : getco(L));
+}
+
+
 static int luaB_yieldable (lua_State *L) {
-  lua_State *co = lua_isnone(L, 1) ? L : getco(L);
+  lua_State *co = getoptco(L);
   lua_pushboolean(L, lua_isyieldable(co));
   return 1;
 }
@@ -168,23 +174,32 @@ static int luaB_corunning (lua_State *L) {
 
 
 static int luaB_close (lua_State *L) {
-  lua_State *co = getco(L);
+  lua_State *co = getoptco(L);
   int status = auxstatus(L, co);
   switch (status) {
     case COS_DEAD: case COS_YIELD: {
-      status = lua_resetthread(co);
+      status = lua_closethread(co, L);
       if (status == LUA_OK) {
         lua_pushboolean(L, 1);
         return 1;
       }
       else {
         lua_pushboolean(L, 0);
-        lua_xmove(co, L, 1);  /* copy error message */
+        lua_xmove(co, L, 1);  /* move error message */
         return 2;
       }
     }
-    default:  /* normal or running coroutine */
+    case COS_NORM:
       return luaL_error(L, "cannot close a %s coroutine", statname[status]);
+    case COS_RUN:
+      lua_geti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);  /* get main */
+      if (lua_tothread(L, -1) == co)
+        return luaL_error(L, "cannot close main thread");
+      lua_closethread(co, L);  /* close itself */
+      /* previous call does not return *//* FALLTHROUGH */
+    default:
+      lua_assert(0);
+      return 0;
   }
 }
 

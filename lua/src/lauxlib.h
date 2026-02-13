@@ -81,6 +81,9 @@ LUALIB_API int (luaL_checkoption) (lua_State *L, int arg, const char *def,
 LUALIB_API int (luaL_fileresult) (lua_State *L, int stat, const char *fname);
 LUALIB_API int (luaL_execresult) (lua_State *L, int stat);
 
+LUALIB_API void *luaL_alloc (void *ud, void *ptr, size_t osize,
+                                                  size_t nsize);
+
 
 /* predefined references */
 #define LUA_NOREF       (-2)
@@ -100,9 +103,11 @@ LUALIB_API int (luaL_loadstring) (lua_State *L, const char *s);
 
 LUALIB_API lua_State *(luaL_newstate) (void);
 
+LUALIB_API unsigned luaL_makeseed (lua_State *L);
+
 LUALIB_API lua_Integer (luaL_len) (lua_State *L, int idx);
 
-LUALIB_API void luaL_addgsub (luaL_Buffer *b, const char *s,
+LUALIB_API void (luaL_addgsub) (luaL_Buffer *b, const char *s,
                                      const char *p, const char *r);
 LUALIB_API const char *(luaL_gsub) (lua_State *L, const char *s,
                                     const char *p, const char *r);
@@ -154,22 +159,19 @@ LUALIB_API void (luaL_requiref) (lua_State *L, const char *modname,
 #define luaL_loadbuffer(L,s,sz,n)	luaL_loadbufferx(L,s,sz,n,NULL)
 
 
-/* push the value used to represent failure/error */
-#define luaL_pushfail(L)	lua_pushnil(L)
-
-
 /*
-** Internal assertions for in-house debugging
+** Perform arithmetic operations on lua_Integer values with wrap-around
+** semantics, as the Lua core does.
 */
-#if !defined(lua_assert)
+#define luaL_intop(op,v1,v2)  \
+	((lua_Integer)((lua_Unsigned)(v1) op (lua_Unsigned)(v2)))
 
-#if defined LUAI_ASSERT
-  #include <assert.h>
-  #define lua_assert(c)		assert(c)
+
+/* push the value used to represent failure/error */
+#if defined(LUA_FAILISFALSE)
+#define luaL_pushfail(L)	lua_pushboolean(L, 0)
 #else
-  #define lua_assert(c)		((void)0)
-#endif
-
+#define luaL_pushfail(L)	lua_pushnil(L)
 #endif
 
 
@@ -240,30 +242,6 @@ typedef struct luaL_Stream {
 } luaL_Stream;
 
 /* }====================================================== */
-
-/*
-** {==================================================================
-** "Abstraction Layer" for basic report of messages and errors
-** ===================================================================
-*/
-
-/* print a string */
-#if !defined(lua_writestring)
-#define lua_writestring(s,l)   fwrite((s), sizeof(char), (l), stdout)
-#endif
-
-/* print a newline and flush the output */
-#if !defined(lua_writeline)
-#define lua_writeline()        (lua_writestring("\n", 1), fflush(stdout))
-#endif
-
-/* print an error message */
-#if !defined(lua_writestringerror)
-#define lua_writestringerror(s,p) \
-        (fprintf(stderr, (s), (p)), fflush(stderr))
-#endif
-
-/* }================================================================== */
 
 
 /*
